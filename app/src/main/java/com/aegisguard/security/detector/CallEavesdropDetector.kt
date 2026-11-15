@@ -83,7 +83,18 @@ class CallEavesdropDetector(
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun inspectRecordingConfig(config: AudioRecordingConfiguration) {
         val clientAudioSource = config.clientAudioSource
-        val clientPackage = config.clientPackageName ?: "Unknown Application"
+        val clientPackage = try {
+            val method = config.javaClass.getMethod("getClientPackageName")
+            method.invoke(config) as? String
+        } catch (e: Exception) {
+            null
+        } ?: try {
+            val uidMethod = config.javaClass.getMethod("getClientUid")
+            val uid = uidMethod.invoke(config) as? Int ?: 0
+            context.packageManager.getNameForUid(uid)
+        } catch (e: Exception) {
+            null
+        } ?: "Unknown Application"
         val clientUid = config.clientAudioSessionId
 
         val isSystemDialer = trustedDialerPackages.contains(clientPackage)

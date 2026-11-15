@@ -151,7 +151,18 @@ class PrivacySentinelService : Service() {
 
                     if (isRecording) {
                         configs?.forEach { config ->
-                            val clientPkg = config.clientPackageName ?: "Unknown Client"
+                            val clientPkg = try {
+                                val method = config.javaClass.getMethod("getClientPackageName")
+                                method.invoke(config) as? String
+                            } catch (e: Exception) {
+                                null
+                            } ?: try {
+                                val uidMethod = config.javaClass.getMethod("getClientUid")
+                                val uid = uidMethod.invoke(config) as? Int ?: 0
+                                packageManager.getNameForUid(uid)
+                            } catch (e: Exception) {
+                                null
+                            } ?: "Audio Client"
                             Log.w(TAG, "Microphone actively recording by: $clientPkg")
 
                             val event = PrivacyAccessEvent(
