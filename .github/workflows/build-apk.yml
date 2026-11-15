@@ -27,8 +27,10 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK Licenses & Install Platform 35
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Make Gradlew Executable
         run: chmod +x gradlew
@@ -40,7 +42,7 @@ jobs:
         run: |
           mkdir -p release-output
           cp app/build/outputs/apk/debug/app-debug.apk release-output/AegisGuard-Security-v1.0.0.apk
-          ls -la release-output
+          ls -lh release-output/
 
       - name: Upload APK as Workflow Artifact
         uses: actions/upload-artifact@v4
@@ -57,7 +59,7 @@ jobs:
           name: "AegisGuard Mobile Security v1.0.0 (Official Release)"
           body: |
             ### 🛡️ AegisGuard Mobile Security v1.0.0
-            
+
             **Direct Mobile Installation:**
             Download `AegisGuard-Security-v1.0.0.apk` directly to your Android device below and install.
 
