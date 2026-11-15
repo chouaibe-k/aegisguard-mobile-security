@@ -1,0 +1,71 @@
+name: Build AegisGuard Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Make Gradlew Executable
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Rename and Prepare APK Asset
+        run: |
+          mkdir -p release-output
+          cp app/build/outputs/apk/debug/app-debug.apk release-output/AegisGuard-Security-v1.0.0.apk
+          ls -la release-output
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AegisGuard-Security-v1.0.0-apk
+          path: release-output/AegisGuard-Security-v1.0.0.apk
+          retention-days: 30
+
+      - name: Create GitHub Release & Attach APK
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "AegisGuard Mobile Security v1.0.0 (Official Release)"
+          body: |
+            ### 🛡️ AegisGuard Mobile Security v1.0.0
+            
+            **Direct Mobile Installation:**
+            Download `AegisGuard-Security-v1.0.0.apk` directly to your Android device below and install.
+
+            #### Key Capabilities Included:
+            - **Silent Camera Snooping Sentinel**: Real-time `CameraManager.AvailabilityCallback` hooks with Privacy Dot.
+            - **Voice Call Anti-Wiretap**: Real-time correlation of `CALL_STATE_OFFHOOK` with `AudioRecord` sessions.
+            - **Stalkerware & Spyware Hunter**: Signature matching for Pegasus, FlexiSPY, mSpy, Cerberus, and Anatsa trojans.
+            - **Accessibility & Keylogger Guard**: Neutralizes abusive screen reading & keystroke interception services.
+            - **Stealth Ghost App Hunter**: Unmasks hidden daemons without app drawer icons.
+          files: release-output/AegisGuard-Security-v1.0.0.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
